@@ -478,11 +478,13 @@ print(plaintext)
 
 Voer het voorbeeld uit met de files in deze repo.
 
+```
 secure-development-example/
 ├─ Dockerfile
 ├─ docker-compose.yml
 ├─ app.py
 └─ secrets.env    # ansible-vault encrypted file
+```
 
 ```bash
  $ podman compose up --build
