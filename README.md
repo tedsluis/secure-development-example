@@ -2,11 +2,11 @@
 
 ## Inhoud
 
-* 1. **Encrypt en decrypt persoonlijke secrets met openssl**
+1. **Encrypt en decrypt persoonlijke secrets met openssl**
   * 1.1 Encrypt je persoonlijke secrets met openssl
   * 1.2 Hashes opnemen in je .bashrc
   * 1.3 Voeg je GITHUB_TOKEN toe aan je ~/.gitconfig
-* 2. **Encrypt en decrypt met ansible-vault**
+2. **Encrypt en decrypt met ansible-vault**
   * 2.1 Installeer ansible
   * 2.2 Creëer een ~/bin/ansible-vault-pass.sh file met je VAULTPASS
   * 2.3 env-file encrypten
@@ -15,7 +15,7 @@
   * 2.6 Test pre-commit webhook
   * 2.7 Ansible Vault encrypted strings opnemen in shell file
   * 2.8 Ansible Vault lezen vanuit python
-* 3. Geef Ansible Vault encrypted secrets door aan een container
+3. **Geef Ansible Vault encrypted secrets door aan een container**
 
 
 ## 1. Encrypt en decrypt persoonlijke secrets met openssl
