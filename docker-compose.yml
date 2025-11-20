@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  vault-demo:
+    build: .
+    container_name: vault-demo
+    environment:
+      - VAULTPASS        # waarde komt uit je shell
+    volumes:
+      - ./secrets.env:/app/secrets.env:ro,Z
+    tty: true
