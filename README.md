@@ -15,7 +15,7 @@
   * 2.6 Test pre-commit webhook
   * 2.7 Ansible Vault encrypted strings opnemen in shell file
   * 2.8 Ansible Vault lezen vanuit python
-3. Geef Ansible Vault encrypted secrets door aan een container
+* 3. Geef Ansible Vault encrypted secrets door aan een container
 
 
 ## 1. Encrypt en decrypt persoonlijke secrets met openssl
