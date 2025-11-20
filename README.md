@@ -14,6 +14,8 @@
   * 2.5 Voorkom dat een .env file unencrypted gecommit kan worden
   * 2.6 Test pre-commit webhook
   * 2.7 Ansible Vault encrypted strings opnemen in shell file
+  * 2.8 Ansible Vault lezen vanuit python
+3. Geef Ansible Vault encrypted secrets door aan een container
 
 
 ## 1. Encrypt en decrypt persoonlijke secrets met openssl
@@ -442,7 +444,7 @@ DB2_USER=export DB_USER="appuser"
 API2_TOKEN=abc123
 ```
 
-### Ansible Vault lezen vanuit python
+### 2.8 Ansible Vault lezen vanuit python
 
 Voorbeeld hoe je een secrets.env file leest vanuit python:
 ```python
@@ -472,7 +474,7 @@ print("Inhoud van secrets.env:")
 print(plaintext)
 ```
 
-## Geef Ansible Vault encrypted secrets door aan een container
+## 3. Geef Ansible Vault encrypted secrets door aan een container
 
 ### Voorbeeld
 
@@ -485,6 +487,13 @@ secure-development-example/
 ├─ app.py
 └─ secrets.env    # ansible-vault encrypted file
 ```
+
+### Podman vs Docker
+
+In het voorbeeld hieronder wordt podman gebruikt. Je kunt podman vervangen door docker.
+https://podman.io/features
+
+### Compose build & run
 
 ```bash
  $ podman compose up --build
