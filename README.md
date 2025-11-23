@@ -15,7 +15,15 @@
   * 2.6 Test pre-commit webhook
   * 2.7 Ansible Vault encrypted strings opnemen in shell file
   * 2.8 Ansible Vault lezen vanuit python
-3. **Geef Ansible Vault encrypted secrets door aan een container**
+  * 2.9 Geef Ansible Vault encrypted secrets door aan een container
+3. **Podman**
+  * 3.1 Podman vs Docker
+  * 3.2 Beperkingen van Podman op Windows
+  * 3.3 Beperkingen van Podman op macOS
+  * 3.4 Wanneer is Podman wel bruikbaar op Windows/macOS?
+  * 3.5 Installatie Podman
+  * 3.6 Podman desktop
+  * 3.7 
 
 
 ## 1. Encrypt en decrypt persoonlijke secrets met openssl
@@ -474,27 +482,16 @@ print("Inhoud van secrets.env:")
 print(plaintext)
 ```
 
-## 3. Geef Ansible Vault encrypted secrets door aan een container
+### 2.9. Geef Ansible Vault encrypted secrets door aan een container
 
-### Voorbeeld
+Voer het voorbeeld uit met de files in deze repo:
 
-Voer het voorbeeld uit met de files in deze repo.
+* [Dockerfile](./Dockerfile)
+* [docker-compose.yml](./docker-compose.yml)
+* [app.py](./app.py)
+* [secrets.env](./secrets.env)    # ansible-vault encrypted file
 
-```
-secure-development-example/
-├─ Dockerfile
-├─ docker-compose.yml
-├─ app.py
-└─ secrets.env    # ansible-vault encrypted file
-```
-
-### Podman vs Docker
-
-In het voorbeeld hieronder wordt podman gebruikt. Je kunt podman vervangen door docker.
-https://podman.io/features
-
-### Compose build & run
-
+Build & run met Docker of Podman Compose. In het voorbeeld hieronder wordt podman gebruikt. Je kunt podman vervangen door docker.
 ```bash
  $ podman compose up --build
 >>>> Executing external compose provider "/usr/bin/podman-compose". Please see podman-compose(1) for how to disable this message. <<<<
@@ -524,3 +521,127 @@ Successfully tagged localhost/secure-development-example_vault-demo:latest
 [vault-demo] | export API_TOKEN="abc123"
 [vault-demo] | 
 ```
+In dit voorbeeld wordt de environment variabele **VAULTPASS** van de huidige shell doorgegeven aan de container en gebruikt om de **secrets.env** file te decrypten.
+
+## 3. Podman
+
+### Podman vs Docker
+
+| Onderdeel                             | **Docker**                                                                                                      | **Podman**                                                                                                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Architectuur**                      | *Client–server model* met een centrale daemon (`dockerd`) die root-privileges heeft.                            | *Daemonless*: werkt zonder centrale service; elke container is een eigen proces.                             |
+| **Rootless container support**        | Ondersteund, maar minder volwassen en niet standaard.                                                           | Ontworpen voor rootless gebruik. Geen extra permissies nodig voor standaard gebruikers      |
+| **Security model**                    | Docker daemon draait meestal als root → grotere aanvalsvector.                                                  | Containers draaien als normale gebruiker zonder speciale daemon → **veiliger by design**.                    |
+| **Compatibiliteit**                   | De facto standaard, breed ondersteund door tooling, tutorials, CI/CD.                                           | 100% CLI-compatibel met Docker, zelfde container images en Dockerfile format.                                         |
+| **Images & registries**               | Gebruikt containerd en Docker Hub als standaard registry.                                                       | Gebruikt eigen storage (libcontainers). Kan met alle OCI-images werken.                                      |
+| **Secrets**                           | Volwaardige secrets alleen in **Swarm mode**. In Compose: secrets via files. BuildKit heeft build-time secrets. | **Host-level Podman secrets** beschikbaar voor zowel runtime (mount/env) als voor Kube-play. |
+| **Pods support**                      | Geen pods-concept, containers zijn individueel.                                                                 | **Native pods**, vergelijkbaar met Kubernetes pods → meerdere containers, gedeeld netwerk/IPC.               |
+| **Systemd integratie**                | Mogelijk via `docker run` + handmatige units.                                                                   | **Out-of-the-box integratie** via *Quadlet* → declaratieve `.container`/`.pod` files.                            |
+| **Compose support**                   | Officiële Docker Compose (V2).                                                                                  | `podman compose` is compatibel, maar iets beperkter; goed genoeg voor de meeste use-cases.                   |
+| **Kubernetes integratie**             | `docker stack deploy` en Swarm zijn alternatief, geen native K8s YAML.                                          | `podman kube generate / play` → direct containers ↔ K8s YAML.                                                |
+| **Daemon overhead**                   | Vereist een draaiende daemon → meer memory/CPU footprint.                                                       | Geen daemon → lichter en efficiënter.                                                                        |
+| **Logging**                           | Via Docker daemon (json-file, syslog, etc.).                                                                    | Standaard via journald (systemd) + Podman zelf.                                                              |
+| **Auto-updates**                      | Geen ingebouwd systeem; rely via compose of scripts.                                                            | **podman auto-update** met image labels.                                                                     |
+| **Init systeem integratie (systemd)** | Normaal zelf systemd units maken of `docker start` via scripts.                                                 | Quadlet genereert automatisch systemd services → veel cleaner.                                               |
+| **OS voorkeuren**                     | Zeer populair op Windows, macOS en Linux (via Docker Desktop).                                                          | Draait op elke Linux distro. Minder geschikt voor Windows/macOS vanwege beperkingen, zie hieronder.  |
+
+
+### 3.2 Beperkingen van Podman op Windows
+
+Podman draait niet native op Windows. Je hebt altijd één van deze nodig:
+
+* WSL2 (Windows Subsystem for Linux) met een Linux-distro
+* Een VM via Podman Machine (met QEMU of Hyper-V)
+
+❌ 1. Geen native containers op Windows
+
+* Podman kan geen Windows-containers draaien.
+* Alleen Linux-containers werken, via een Linux-omgeving.
+
+❌ 2. Beperktere integratie met Windows filesystems
+
+* File mounting (bind mounts) vanuit Windows kan problemen geven:
+    * bestandsrechten/ownership niet correct overgenomen
+    * performance issues bij grote mounts
+    * SELinux/AppArmor contexten ontbreken
+* In WSL2:
+    * Mounts vanuit /mnt/c/... zijn stuk trager dan mounts in de Linux-filesystemruimte.
+
+❌ 3. Podman Machine verplicht voor system-level functies
+
+* Dingen zoals systemd, pods, cgroups, rootless-mode werken alleen goed in een Linux VM.
+* Dit betekent extra overhead t.o.v. Docker Desktop, dat hier beter geoptimaliseerd voor is.
+
+❌ 4. Networking is beperkt / anders dan op Linux
+
+* Containers kunnen geen Windows-poorten direct claimen.
+* Poorten worden ge-forward via WSL2/VM → vertraagt en kan conflicten geven.
+* Multi-container pods werken wel, maar soms met afwijkende netwerknamespaces.
+
+❌ 5. Minder tooling-support
+
+* Minder IDE-integraties op Windows (t.o.v. Docker Desktop).
+* Sommige tools verwachten Docker socket (/var/run/docker.sock) — Podman ondersteunt dit via een compatibiliteitslaag, maar niet altijd perfect.
+
+❌ 6. Geen Podman Quadlet / systemd integratie op Windows zelf
+
+* systemd werkt alleen binnen de Linux VM, niet op Windows.
+
+### 3.3 Beperkingen van Podman op macOS
+
+macOS is Unix-achtig, maar Podman werkt niet native omdat het Docker/Podman-kernel-features mist. Je hebt altijd een VM nodig (Podman Machine met QEMU/Apple HVF).
+
+❌ 1. Geen native containers
+
+* Net als op Windows werkt Podman altijd via een Linux-VM.
+* Er zijn geen macOS containers.
+
+❌ 2. Filesystem overhead & beperkingen
+
+* Bind mounts tussen macOS host en VM zijn ong. 10× langzamer dan native Linux.
+* Bestandsrechten / permissies vertalen niet 1-op-1.
+* Performance voor databases of veel I/O is slecht op gedeelde mounts.
+
+❌ 3. Networking niet gelijk aan Linux
+
+* Containers draaien in een VM-netwerk, niet in macOS zelf.
+* Poorten moeten geforward worden; host-to-container networking werkt, container-to-host is beperkt.
+
+❌ 4. Geen systemd integratie op macOS
+
+* Quadlet/systemd werkt enkel in de VM.
+* Kan niet als macOS service draaien.
+
+❌ 5. Minder geïntegreerde UX dan Docker Desktop
+
+* Docker Desktop biedt:
+* UI voor images/containers
+* Kubernetes ingebouwd
+* File sharing UI
+* Networking optimalisaties
+* Podman heeft dit op macOS niet.
+
+❌ 6. Geen virtuele GPU / hardware acceleration
+
+* GPU passthrough → niet ondersteund.
+* Sommige AI workloads zijn daardoor niet bruikbaar.
+
+### 3.4 Wanneer is Podman wel bruikbaar op Windows/macOS?
+
+Goed te doen voor:
+
+✔ Backend development
+✔ Gebruiken als Docker replacement (CLI compatibel)
+✔ Testen van pods + images
+✔ CI/CD pipelines op laptop
+✔ Security testing in een Linux-VM
+
+Niet ideaal voor:
+
+✘ High-performance workloads
+✘ Database development met veel disk I/O
+✘ Productie-achtige setups (networking/mounts anders dan Linux)
+✘ Heavy tooling die Docker Desktop features verwacht
+
+
+https://podman.io/features
